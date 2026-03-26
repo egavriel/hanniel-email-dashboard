@@ -3,10 +3,17 @@
   "compatibility_date": "2025-03-20",
   "compatibility_flags": ["nodejs_compat"],
   "main": ".open-next/worker.js",
+  "workers_dev": true,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "admin.hanniel.co",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
