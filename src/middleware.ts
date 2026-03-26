@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
+export const runtime = "experimental-edge";
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
