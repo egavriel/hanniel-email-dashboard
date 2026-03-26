@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { password } = body;
 
-  if (!password || !validatePassword(password)) {
+  if (!password || !(await validatePassword(password))) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 

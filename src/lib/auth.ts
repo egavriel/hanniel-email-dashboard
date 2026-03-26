@@ -3,8 +3,15 @@ import { cookies } from "next/headers";
 const SESSION_COOKIE = "session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-function getSessionSecret(): string {
-  return process.env.SESSION_SECRET || "fallback-dev-secret";
+async function getEnv(): Promise<Record<string, string>> {
+  const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+  const { env } = await getCloudflareContext();
+  return env as Record<string, string>;
+}
+
+async function getSessionSecret(): Promise<string> {
+  const env = await getEnv();
+  return env.SESSION_SECRET || "fallback-dev-secret";
 }
 
 function toHex(buffer: ArrayBuffer): string {
@@ -14,7 +21,7 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 async function sign(value: string): Promise<string> {
-  const secret = getSessionSecret();
+  const secret = await getSessionSecret();
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -67,6 +74,7 @@ export async function isAuthenticated(): Promise<boolean> {
   return (await verify(session.value)) !== null;
 }
 
-export function validatePassword(password: string): boolean {
-  return password === (process.env.DASHBOARD_PASSWORD || "");
+export async function validatePassword(password: string): Promise<boolean> {
+  const env = await getEnv();
+  return password === (env.DASHBOARD_PASSWORD || "");
 }

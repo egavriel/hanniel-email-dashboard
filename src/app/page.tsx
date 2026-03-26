@@ -1,13 +1,13 @@
 import { Nav } from "@/components/nav";
 import { AliasTable } from "@/components/alias-table";
 import type { AliasRecord } from "@/lib/types";
-import { getCFClient, ZONE_ID, DOMAIN } from "@/lib/cloudflare";
+import { getCFClient, getZoneId } from "@/lib/cloudflare";
 import { getAllMetadata } from "@/lib/d1";
 
 async function getAliases(): Promise<AliasRecord[]> {
   try {
-    const cf = getCFClient();
-    const zoneId = ZONE_ID();
+    const cf = await getCFClient();
+    const zoneId = await getZoneId();
 
     const [metadataList, rules] = await Promise.all([
       getAllMetadata(),

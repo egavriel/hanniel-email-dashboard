@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCFClient, ZONE_ID } from "@/lib/cloudflare";
+import { getCFClient, getZoneId } from "@/lib/cloudflare";
 
 export async function GET() {
   try {
-    const cf = getCFClient();
-    const zoneId = ZONE_ID();
+    const cf = await getCFClient();
+    const zoneId = await getZoneId();
 
     const dns = await cf.emailRouting.dns.get({ zone_id: zoneId });
 

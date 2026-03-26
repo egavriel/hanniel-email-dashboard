@@ -29,11 +29,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } catch {
       setError("Something went wrong");
-    } finally {
       setLoading(false);
     }
   }

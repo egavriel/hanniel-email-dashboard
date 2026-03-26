@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCFClient, ZONE_ID, DESTINATION_EMAIL, DOMAIN } from "@/lib/cloudflare";
+import { getCFClient, getZoneId, getDestinationEmail, DOMAIN } from "@/lib/cloudflare";
 import { upsertMetadata } from "@/lib/d1";
 import type { CreateAliasInput } from "@/lib/types";
 
@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Maximum 50 aliases per batch" }, { status: 400 });
     }
 
-    const cf = getCFClient();
-    const zoneId = ZONE_ID();
-    const destination = DESTINATION_EMAIL();
+    const cf = await getCFClient();
+    const zoneId = await getZoneId();
+    const destination = await getDestinationEmail();
     const results: BulkResult[] = [];
 
     for (const item of aliases) {

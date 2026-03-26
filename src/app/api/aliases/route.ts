@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCFClient, ZONE_ID, DESTINATION_EMAIL, DOMAIN } from "@/lib/cloudflare";
+import { getCFClient, getZoneId, getDestinationEmail, DOMAIN } from "@/lib/cloudflare";
 import { getAllMetadata, upsertMetadata } from "@/lib/d1";
 import type { AliasRecord, CreateAliasInput } from "@/lib/types";
 
 export async function GET() {
   try {
-    const cf = getCFClient();
-    const zoneId = ZONE_ID();
+    const cf = await getCFClient();
+    const zoneId = await getZoneId();
 
-    // Fetch CF rules and D1 metadata in parallel
     const [metadataList, rulesPages] = await Promise.all([
       getAllMetadata(),
       (async () => {
@@ -67,8 +66,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cf = getCFClient();
-    const zoneId = ZONE_ID();
+    const cf = await getCFClient();
+    const zoneId = await getZoneId();
+    const destination = await getDestinationEmail();
     const fullAddress = `${alias}@${DOMAIN}`;
 
     const rule = await cf.emailRouting.rules.create({
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       name: alias,
       enabled: true,
       matchers: [{ type: "literal", field: "to", value: fullAddress }],
-      actions: [{ type: "forward", value: [DESTINATION_EMAIL()] }],
+      actions: [{ type: "forward", value: [destination] }],
     });
 
     const ruleId = rule.id || "";
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       cfRuleId: ruleId,
       alias,
       fullAddress,
-      destination: DESTINATION_EMAIL(),
+      destination,
       enabled: true,
       service: service || null,
       category: category || null,
