@@ -1,23 +1,51 @@
 import { Nav } from "@/components/nav";
 import { AliasTable } from "@/components/alias-table";
 import type { AliasRecord } from "@/lib/types";
-import { headers } from "next/headers";
+import { getCFClient, ZONE_ID, DOMAIN } from "@/lib/cloudflare";
+import { getAllMetadata } from "@/lib/d1";
 
 async function getAliases(): Promise<AliasRecord[]> {
-  const headersList = await headers();
-  const host = headersList.get("host") || "localhost:3000";
-  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-
   try {
-    const res = await fetch(`${protocol}://${host}/api/aliases`, {
-      cache: "no-store",
-      headers: {
-        cookie: headersList.get("cookie") || "",
-      },
+    const cf = getCFClient();
+    const zoneId = ZONE_ID();
+
+    const [metadataList, rules] = await Promise.all([
+      getAllMetadata(),
+      (async () => {
+        const items = [];
+        for await (const rule of cf.emailRouting.rules.list({ zone_id: zoneId })) {
+          items.push(rule);
+        }
+        return items;
+      })(),
+    ]);
+
+    const metadataMap = new Map(metadataList.map((m) => [m.cf_rule_id, m]));
+
+    return rules.map((rule) => {
+      const matcher = rule.matchers?.[0];
+      const action = rule.actions?.[0];
+      const address = matcher?.value || "";
+      const alias = address.split("@")[0] || "";
+      const meta = metadataMap.get(rule.id || "");
+
+      return {
+        cfRuleId: rule.id || "",
+        alias,
+        fullAddress: address,
+        destination: action?.value?.join(", ") || "",
+        enabled: rule.enabled !== false,
+        priority: 0,
+        service: meta?.service ?? null,
+        category: meta?.category ?? null,
+        notes: meta?.notes ?? null,
+        createdAt: meta?.created_at ?? null,
+        updatedAt: meta?.updated_at ?? null,
+        tracked: !!meta,
+      };
     });
-    if (!res.ok) return [];
-    return res.json();
-  } catch {
+  } catch (error) {
+    console.error("Failed to load aliases:", error);
     return [];
   }
 }
